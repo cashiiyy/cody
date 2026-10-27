@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>CODY – Local AI Coding Workspace</title>
+  <meta name="description" content="Privacy-first local AI coding assistant powered by LM Studio" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ═══════════════════════════════════════════════════════ TOP BAR ══ -->
+  <header class="topbar" role="banner">
+    <div class="topbar-left">
+      <div class="topbar-brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <span class="brand-name">CODY</span>
+      </div>
+      <div class="workspace-breadcrumb">
+        <span class="breadcrumb-separator">›</span>
+        <span id="workspace-name" class="workspace-name">No workspace</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div id="connection-status" class="connection-badge disconnected" role="status" aria-live="polite">
+        <span class="status-dot"></span>
+        <span class="status-label">Disconnected</span>
+      </div>
+      <div id="model-badge" class="model-badge" title="Active model">
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span id="model-name">No model</span>
+      </div>
+      <button id="btn-settings" class="icon-btn" title="Settings (Ctrl+,)" aria-label="Open settings">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M10 13a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.5"/><path d="M17.5 10a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" stroke="currentColor" stroke-width="1.5"/><path d="M10 1v2M10 17v2M1 10h2M17 10h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════ MAIN LAYOUT ══ -->
+  <div class="app-layout">
+
+    <!-- ════════════════════════════════════════════════ LEFT SIDEBAR ══ -->
+    <aside class="sidebar" role="complementary" aria-label="Workspace panel">
+      <div class="sidebar-section">
+        <button id="btn-open-workspace" class="sidebar-action-btn" aria-label="Open workspace">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" stroke="currentColor" stroke-width="1.5"/></svg>
+          Open Workspace
+        </button>
+      </div>
+
+      <div class="sidebar-section sidebar-section--tree">
+        <div class="sidebar-section-header">
+          <span class="sidebar-section-title">FILES</span>
+          <button id="btn-refresh-tree" class="icon-btn icon-btn--sm" title="Refresh" aria-label="Refresh file tree">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8a5.5 5.5 0 11-1.5-3.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 2v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div id="file-tree" class="file-tree" role="tree" aria-label="Project files">
+          <div class="tree-empty">Open a workspace to see files</div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="context-usage">
+          <div class="context-usage-label">
+            <span>Context</span>
+            <span id="context-pct">—</span>
+          </div>
+          <div class="context-bar" role="progressbar" aria-label="Context usage" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            <div id="context-bar-fill" class="context-bar-fill" style="width:0%"></div>
+          </div>
+          <div id="context-tokens" class="context-tokens">0 / 0 tokens</div>
+        </div>
+        <div id="task-status-sidebar" class="task-status-mini" aria-live="polite">
+          <span class="task-phase-dot idle"></span>
+          <span id="task-phase-label">Idle</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ═════════════════════════════════════════════════════ MAIN AREA ══ -->
+    <main class="main-area" role="main">
+
+      <!-- Welcome state shown when no workspace is open -->
+      <div id="welcome-screen" class="welcome-screen">
+        <div class="welcome-content">
+          <svg class="welcome-icon" viewBox="0 0 80 80" fill="none" aria-hidden="true">
+            <rect width="80" height="80" rx="16" fill="#389FD6" fill-opacity=".12"/>
+            <path d="M40 18L18 30l22 11 22-11L40 18z" stroke="#389FD6" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M18 50l22 11 22-11" stroke="#389FD6" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M18 40l22 11 22-11" stroke="#389FD6" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+          <h1 class="welcome-title">Welcome to CODY</h1>
+          <p class="welcome-subtitle">Privacy-first local AI coding workspace</p>
+          <div class="welcome-steps">
+            <div class="welcome-step">
+              <div class="step-num">1</div>
+              <div class="step-text">
+                <strong>Start LM Studio</strong> and load a model (e.g. Qwen2.5-Coder-7B)
+              </div>
+            </div>
+            <div class="welcome-step">
+              <div class="step-num">2</div>
+              <div class="step-text">
+                <strong>Open a workspace</strong> — your project directory
+              </div>
+            </div>
+            <div class="welcome-step">
+              <div class="step-num">3</div>
+              <div class="step-text">
+                <strong>Start coding</strong> — ask CODY to understand, plan, and modify your project
+              </div>
+            </div>
+          </div>
+          <div class="welcome-actions">
+            <button id="btn-open-workspace-welcome" class="primary-btn">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" stroke="currentColor" stroke-width="1.5"/></svg>
+              Open Workspace
+            </button>
+            <button id="btn-test-connection-welcome" class="secondary-btn">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Test LM Studio
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversation area (shown after workspace open) -->
+      <div id="conversation-area" class="conversation-area hidden" role="log" aria-live="polite" aria-label="Conversation">
+        <div id="messages-container" class="messages-container">
+          <!-- Messages injected here -->
+        </div>
+
+        <!-- Approval panel -->
+        <div id="approval-panel" class="approval-panel hidden" role="dialog" aria-label="Proposed changes" aria-modal="false">
+          <div class="approval-header">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="#E5C07B" stroke-width="1.5"/><path d="M10 6v4l3 3" stroke="#E5C07B" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <strong>Proposed File Changes</strong>
+          </div>
+          <div id="approval-list" class="approval-list"></div>
+          <div class="approval-actions">
+            <button id="btn-approve" class="approve-btn">
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Apply Changes
+            </button>
+            <button id="btn-reject" class="reject-btn">
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Reject
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prompt composer -->
+      <div id="composer" class="composer hidden" role="form" aria-label="Message composer">
+        <div class="composer-inner">
+          <textarea
+            id="prompt-input"
+            class="prompt-input"
+            placeholder="Ask CODY to understand, plan, or modify your project… (Enter to send, Shift+Enter for newline)"
+            rows="3"
+            aria-label="Enter your message"
+            aria-multiline="true"
+          ></textarea>
+          <div class="composer-actions">
+            <div class="composer-hints">
+              <kbd>Enter</kbd> send &nbsp;·&nbsp; <kbd>Shift+Enter</kbd> newline
+            </div>
+            <div class="composer-btns">
+              <button id="btn-stop" class="stop-btn hidden" aria-label="Stop generation">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/></svg>
+                Stop
+              </button>
+              <button id="btn-send" class="send-btn" aria-label="Send message (Enter)">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════ EXECUTION PANEL ══ -->
+  <div id="exec-panel" class="exec-panel" role="region" aria-label="Execution log">
+    <div class="exec-panel-header" id="exec-panel-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="exec-panel-body">
+      <div class="exec-panel-title">
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4 7h4M4 10h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Execution Log
+      </div>
+      <div class="exec-panel-controls">
+        <span id="exec-status-inline" class="exec-status-inline"></span>
+        <button id="btn-clear-log" class="icon-btn icon-btn--sm" title="Clear log" aria-label="Clear log">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+        <svg class="exec-chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+    <div id="exec-panel-body" class="exec-panel-body" hidden>
+      <div id="exec-log" class="exec-log" role="log" aria-label="Execution log entries"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ SETTINGS MODAL ══ -->
+  <div id="settings-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal-panel" role="document">
+      <div class="modal-header">
+        <h2 id="settings-title" class="modal-title">Settings</h2>
+        <button id="btn-close-settings" class="icon-btn" aria-label="Close settings">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-group">
+          <h3 class="settings-group-title">LM Studio</h3>
+          <div class="settings-field">
+            <label for="setting-endpoint">API Endpoint</label>
+            <input id="setting-endpoint" type="url" class="settings-input" placeholder="http://127.0.0.1:1234/v1" />
+          </div>
+          <div class="settings-field">
+            <label for="setting-model">Active Model</label>
+            <div class="model-select-row">
+              <select id="setting-model" class="settings-select"></select>
+              <button id="btn-refresh-models" class="secondary-btn secondary-btn--sm" aria-label="Refresh models">Refresh</button>
+            </div>
+          </div>
+          <button id="btn-test-conn" class="secondary-btn">Test Connection</button>
+          <div id="conn-test-result" class="conn-test-result" aria-live="polite"></div>
+        </div>
+
+        <div class="settings-group">
+          <h3 class="settings-group-title">Generation</h3>
+          <div class="settings-field">
+            <label for="setting-temp">Temperature <span id="temp-value" class="settings-value-badge">0.1</span></label>
+            <input id="setting-temp" type="range" min="0" max="2" step="0.05" class="settings-range" />
+          </div>
+          <div class="settings-field">
+            <label for="setting-max-ctx">Max Context Tokens</label>
+            <input id="setting-max-ctx" type="number" class="settings-input settings-input--sm" min="1024" max="131072" step="1024" />
+          </div>
+          <div class="settings-field">
+            <label for="setting-max-out">Max Output Tokens</label>
+            <input id="setting-max-out" type="number" class="settings-input settings-input--sm" min="256" max="32768" step="256" />
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3 class="settings-group-title">Workspace</h3>
+          <div class="settings-field settings-field--row">
+            <label for="setting-auto-approve">Auto-approve file operations</label>
+            <input id="setting-auto-approve" type="checkbox" class="settings-checkbox" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-save-settings" class="primary-btn">Save Settings</button>
+        <button id="btn-cancel-settings" class="secondary-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
