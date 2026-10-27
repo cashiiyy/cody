@@ -3,263 +3,736 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>CODY – Local AI Coding Workspace</title>
-  <meta name="description" content="Privacy-first local AI coding assistant powered by LM Studio" />
+  <title>CODY — Local AI IDE Workspace</title>
+  <meta name="description" content="Professional privacy-first local AI coding workspace powered by LM Studio" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-  <!-- ═══════════════════════════════════════════════════════ TOP BAR ══ -->
+<body class="theme-dark">
+  <!-- ═══════════════════════════════════════════════════════ TOP APP BAR ══ -->
   <header class="topbar" role="banner">
     <div class="topbar-left">
-      <div class="topbar-brand">
-        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-          <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-          <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      <div class="mac-traffic-lights" aria-hidden="true" title="CODY Desktop">
+        <span class="traffic-dot close"></span>
+        <span class="traffic-dot minimize"></span>
+        <span class="traffic-dot maximize"></span>
+      </div>
+
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="12 2 2 7 12 12 22 7 12 2" />
+          <polyline points="2 17 12 22 22 17" />
+          <polyline points="2 12 12 17 22 12" />
         </svg>
         <span class="brand-name">CODY</span>
       </div>
-      <div class="workspace-breadcrumb">
-        <span class="breadcrumb-separator">›</span>
-        <span id="workspace-name" class="workspace-name">No workspace</span>
-      </div>
+
+      <div class="topbar-separator" aria-hidden="true"></div>
+
+      <!-- Workspace Selector -->
+      <button id="btn-topbar-workspace" class="topbar-crumb-btn" title="Click to open or change workspace (Ctrl+O)" aria-label="Current Workspace">
+        <svg class="crumb-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 4a1 1 0 011-1h3.5l1.5 1.5H13a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" />
+        </svg>
+        <span id="workspace-name" class="workspace-name">No Workspace Open</span>
+        <svg class="crumb-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+
+      <span id="branch-badge" class="badge badge--subtle hidden">main</span>
     </div>
+
+    <!-- Center: Global Command Palette Trigger -->
+    <div class="topbar-center">
+      <button id="btn-command-palette-trigger" class="command-search-trigger" title="Search actions and files (Ctrl+Shift+P)" aria-label="Open Command Palette">
+        <svg class="search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <circle cx="6.5" cy="6.5" r="4.5" />
+          <path d="M10 10l3.5 3.5" />
+        </svg>
+        <span class="search-placeholder">Search files, commands, actions…</span>
+        <kbd class="shortcut-pill">Ctrl+Shift+P</kbd>
+      </button>
+    </div>
+
+    <!-- Right Controls -->
     <div class="topbar-right">
-      <div id="connection-status" class="connection-badge disconnected" role="status" aria-live="polite">
+      <div id="connection-status" class="status-pill disconnected" role="status" aria-live="polite" title="LM Studio connection state">
         <span class="status-dot"></span>
         <span class="status-label">Disconnected</span>
       </div>
-      <div id="model-badge" class="model-badge" title="Active model">
-        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <span id="model-name">No model</span>
+
+      <div id="model-badge" class="model-pill" title="Active LM Studio model">
+        <svg class="model-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <rect x="2" y="3" width="12" height="10" rx="2" />
+          <circle cx="6" cy="8" r="1" fill="currentColor" />
+          <circle cx="10" cy="8" r="1" fill="currentColor" />
+        </svg>
+        <span id="model-name">No Model</span>
       </div>
-      <button id="btn-settings" class="icon-btn" title="Settings (Ctrl+,)" aria-label="Open settings">
-        <svg viewBox="0 0 20 20" fill="none"><path d="M10 13a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.5"/><path d="M17.5 10a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z" stroke="currentColor" stroke-width="1.5"/><path d="M10 1v2M10 17v2M1 10h2M17 10h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+
+      <div class="topbar-separator" aria-hidden="true"></div>
+
+      <!-- Panel Toggles -->
+      <div class="panel-toggle-group" role="group" aria-label="Toggle Layout Panels">
+        <button id="btn-toggle-sidebar" class="icon-btn active" title="Toggle Project Explorer (Ctrl+B)" aria-label="Toggle Project Explorer">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <rect x="2" y="2" width="12" height="12" rx="1.5" />
+            <path d="M6 2v12" />
+          </svg>
+        </button>
+        <button id="btn-toggle-bottom" class="icon-btn" title="Toggle Tool Window (Ctrl+J)" aria-label="Toggle Bottom Tool Window">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <rect x="2" y="2" width="12" height="12" rx="1.5" />
+            <path d="M2 10h12" />
+          </svg>
+        </button>
+        <button id="btn-toggle-inspector" class="icon-btn active" title="Toggle Agent Inspector (Ctrl+I)" aria-label="Toggle Agent Inspector">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <rect x="2" y="2" width="12" height="12" rx="1.5" />
+            <path d="M10 2v12" />
+          </svg>
+        </button>
+      </div>
+
+      <button id="btn-settings" class="icon-btn" title="Settings (Ctrl+,)" aria-label="Open Settings">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="8" cy="8" r="3" />
+          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" />
+        </svg>
       </button>
     </div>
   </header>
 
-  <!-- ═══════════════════════════════════════════════════ MAIN LAYOUT ══ -->
-  <div class="app-layout">
-
-    <!-- ════════════════════════════════════════════════ LEFT SIDEBAR ══ -->
-    <aside class="sidebar" role="complementary" aria-label="Workspace panel">
-      <div class="sidebar-section">
-        <button id="btn-open-workspace" class="sidebar-action-btn" aria-label="Open workspace">
-          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" stroke="currentColor" stroke-width="1.5"/></svg>
-          Open Workspace
+  <!-- ═══════════════════════════════════════════════════════ MAIN IDE BODY ══ -->
+  <div class="ide-body">
+    <!-- 1. LEFT TOOL STRIP (PyCharm style) -->
+    <nav class="tool-strip" aria-label="Tool Window Strip">
+      <div class="tool-strip-top">
+        <button id="btn-strip-project" class="tool-strip-btn active" title="Project Explorer (Alt+1)" aria-label="Project Explorer" data-panel="project">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M2 4a1 1 0 011-1h3.5l1.5 1.5H13a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" />
+          </svg>
+          <span class="tool-strip-label">Project</span>
+        </button>
+        <button id="btn-strip-changes" class="tool-strip-btn" title="Changes & Diff Review (Alt+2)" aria-label="Changes & Diff Review" data-panel="changes">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 13V5a2 2 0 012-2h6" />
+            <polyline points="9 1 13 5 9 9" />
+            <circle cx="3" cy="13" r="1.5" fill="currentColor" />
+          </svg>
+          <span class="tool-strip-label">Changes</span>
+          <span id="badge-changes-count" class="badge-count hidden">0</span>
+        </button>
+        <button id="btn-strip-manifest" class="tool-strip-btn" title="Architecture & Manifest (Alt+3)" aria-label="Architecture Manifest" data-panel="manifest">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="2" width="10" height="12" rx="1.5" />
+            <path d="M6 5h4M6 8h4M6 11h2" />
+          </svg>
+          <span class="tool-strip-label">Memory</span>
+        </button>
+        <button id="btn-strip-exec" class="tool-strip-btn" title="Execution Log (Alt+4)" aria-label="Execution Log" data-panel="exec">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="2 5 6 9 2 13" />
+            <path d="M8 13h6" />
+          </svg>
+          <span class="tool-strip-label">Terminal</span>
         </button>
       </div>
+      <div class="tool-strip-bottom">
+        <button id="btn-strip-settings" class="tool-strip-btn" title="Settings (Ctrl+,)" aria-label="Settings">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="8" cy="8" r="3" />
+            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" />
+          </svg>
+        </button>
+      </div>
+    </nav>
 
-      <div class="sidebar-section sidebar-section--tree">
-        <div class="sidebar-section-header">
-          <span class="sidebar-section-title">FILES</span>
-          <button id="btn-refresh-tree" class="icon-btn icon-btn--sm" title="Refresh" aria-label="Refresh file tree">
-            <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8a5.5 5.5 0 11-1.5-3.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 2v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
+    <!-- 2. PROJECT EXPLORER SIDEBAR -->
+    <aside id="sidebar-project" class="sidebar-project" aria-label="Project Explorer Panel">
+      <div class="sidebar-header">
+        <div class="sidebar-title-row">
+          <span class="sidebar-title">PROJECT</span>
+          <div class="sidebar-actions">
+            <button id="btn-open-workspace" class="icon-btn icon-btn--xs" title="Open Project Workspace (Ctrl+O)" aria-label="Open Workspace">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 4a1 1 0 011-1h3.5l1.5 1.5H13a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" />
+              </svg>
+            </button>
+            <button id="btn-refresh-tree" class="icon-btn icon-btn--xs" title="Refresh Files" aria-label="Refresh Files">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M13.5 8a5.5 5.5 0 11-1.5-3.8" />
+                <polyline points="12 2 12 6 8 6" />
+              </svg>
+            </button>
+          </div>
         </div>
-        <div id="file-tree" class="file-tree" role="tree" aria-label="Project files">
-          <div class="tree-empty">Open a workspace to see files</div>
+        <div class="tree-filter-box">
+          <svg class="filter-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+            <circle cx="6.5" cy="6.5" r="4.5" />
+            <path d="M10 10l3.5 3.5" />
+          </svg>
+          <input id="tree-filter-input" type="text" class="tree-filter-input" placeholder="Filter files…" aria-label="Filter project files" />
+          <button id="btn-tree-filter-clear" class="filter-clear-btn hidden" aria-label="Clear filter">×</button>
+        </div>
+      </div>
+
+      <!-- File Tree Body -->
+      <div id="file-tree" class="file-tree-container" role="tree" aria-label="Project File Tree">
+        <div class="tree-empty-state">
+          <p>No workspace selected</p>
+          <button id="btn-open-workspace-tree" class="btn btn--secondary btn--sm">Open Workspace</button>
         </div>
       </div>
 
       <div class="sidebar-footer">
-        <div class="context-usage">
-          <div class="context-usage-label">
-            <span>Context</span>
-            <span id="context-pct">—</span>
-          </div>
-          <div class="context-bar" role="progressbar" aria-label="Context usage" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-            <div id="context-bar-fill" class="context-bar-fill" style="width:0%"></div>
-          </div>
-          <div id="context-tokens" class="context-tokens">0 / 0 tokens</div>
-        </div>
-        <div id="task-status-sidebar" class="task-status-mini" aria-live="polite">
-          <span class="task-phase-dot idle"></span>
-          <span id="task-phase-label">Idle</span>
-        </div>
+        <span id="tree-file-counter" class="footer-meta">0 files indexed</span>
+        <button id="btn-collapse-all" class="icon-btn icon-btn--xs" title="Collapse All Folders" aria-label="Collapse All">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <polyline points="4 6 8 10 12 6" />
+          </svg>
+        </button>
       </div>
     </aside>
 
-    <!-- ═════════════════════════════════════════════════════ MAIN AREA ══ -->
-    <main class="main-area" role="main">
+    <!-- Resizer between sidebar and main workspace -->
+    <div id="resizer-sidebar" class="resizer resizer--vertical" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize Project Explorer"></div>
 
-      <!-- Welcome state shown when no workspace is open -->
-      <div id="welcome-screen" class="welcome-screen">
-        <div class="welcome-content">
-          <svg class="welcome-icon" viewBox="0 0 80 80" fill="none" aria-hidden="true">
-            <rect width="80" height="80" rx="16" fill="#389FD6" fill-opacity=".12"/>
-            <path d="M40 18L18 30l22 11 22-11L40 18z" stroke="#389FD6" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M18 50l22 11 22-11" stroke="#389FD6" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M18 40l22 11 22-11" stroke="#389FD6" stroke-width="2" stroke-linejoin="round"/>
-          </svg>
-          <h1 class="welcome-title">Welcome to CODY</h1>
-          <p class="welcome-subtitle">Privacy-first local AI coding workspace</p>
-          <div class="welcome-steps">
-            <div class="welcome-step">
-              <div class="step-num">1</div>
-              <div class="step-text">
-                <strong>Start LM Studio</strong> and load a model (e.g. Qwen2.5-Coder-7B)
+    <!-- 3. CENTRAL MAIN WORKSPACE -->
+    <main class="workspace-main" role="main">
+      <!-- Top Workspace Tabs -->
+      <div class="workspace-tabbar" role="tablist" aria-label="Workspace Views">
+        <div class="tabbar-left">
+          <button id="tab-btn-chat" class="workspace-tab active" role="tab" aria-selected="true" aria-controls="pane-conversation">
+            <svg class="tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+              <path d="M2 3h12a1 1 0 011 1v7a1 1 0 01-1 1H5l-3 3V4a1 1 0 011-1z" />
+            </svg>
+            <span class="tab-title">Task & Conversation</span>
+          </button>
+
+          <button id="tab-btn-diff" class="workspace-tab" role="tab" aria-selected="false" aria-controls="pane-diff">
+            <svg class="tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+              <path d="M4 2v12M12 2v12M2 6h4M10 10h4" />
+            </svg>
+            <span class="tab-title">Review Changes</span>
+            <span id="tab-diff-badge" class="tab-badge hidden">0</span>
+          </button>
+
+          <button id="tab-btn-preview" class="workspace-tab hidden" role="tab" aria-selected="false" aria-controls="pane-preview">
+            <svg class="tab-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+              <path d="M3 2h7l4 4v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" />
+            </svg>
+            <span id="tab-preview-title" class="tab-title">file.js</span>
+            <span id="btn-close-preview-tab" class="tab-close" title="Close Preview">×</span>
+          </button>
+        </div>
+
+        <div class="tabbar-right">
+          <button id="btn-clear-chat" class="tab-action-btn" title="Clear Conversation Feed" aria-label="Clear Conversation">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+              <path d="M2 4h12M5 4V2h6v2M4 4v9a1 1 0 001 1h6a1 1 0 001-1V4" />
+            </svg>
+            <span>Clear</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="workspace-panes">
+        <!-- PANE A: Conversation & Tasks -->
+        <div id="pane-conversation" class="workspace-pane active" role="tabpanel" aria-labelledby="tab-btn-chat">
+          <!-- Welcome Screen (shown when conversation is clean) -->
+          <div id="welcome-screen" class="welcome-view">
+            <div class="welcome-card">
+              <div class="welcome-header">
+                <svg class="welcome-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                  <polyline points="2 17 12 22 22 17" />
+                  <polyline points="2 12 12 17 22 12" />
+                </svg>
+                <div class="welcome-titles">
+                  <h2>CODY Coding Workspace</h2>
+                  <p class="welcome-subtitle">Privacy-first developer IDE connected to local LM Studio</p>
+                </div>
               </div>
-            </div>
-            <div class="welcome-step">
-              <div class="step-num">2</div>
-              <div class="step-text">
-                <strong>Open a workspace</strong> — your project directory
+
+              <div class="welcome-grid">
+                <div class="welcome-item">
+                  <div class="welcome-item-icon">1</div>
+                  <div class="welcome-item-body">
+                    <strong>Local Model Engine</strong>
+                    <span>Connects securely to LM Studio on <code>127.0.0.1:1234</code>. Zero data leaves your machine.</span>
+                  </div>
+                </div>
+                <div class="welcome-item">
+                  <div class="welcome-item-icon">2</div>
+                  <div class="welcome-item-body">
+                    <strong>Autonomous Code Editing</strong>
+                    <span>Plans multi-file operations, generates atomic file modifications, and waits for your approval.</span>
+                  </div>
+                </div>
+                <div class="welcome-item">
+                  <div class="welcome-item-icon">3</div>
+                  <div class="welcome-item-body">
+                    <strong>Persistent Memory</strong>
+                    <span>Maintains project architecture and decisions in <code>.cody/project_manifest.json</code>.</span>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="welcome-step">
-              <div class="step-num">3</div>
-              <div class="step-text">
-                <strong>Start coding</strong> — ask CODY to understand, plan, and modify your project
+
+              <div class="welcome-action-row">
+                <button id="btn-open-workspace-welcome" class="btn btn--primary">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path d="M2 4a1 1 0 011-1h3.5l1.5 1.5H13a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" />
+                  </svg>
+                  Open Workspace
+                </button>
+                <button id="btn-test-connection-welcome" class="btn btn--secondary">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6" />
+                    <polyline points="8 4 8 8 11 11" />
+                  </svg>
+                  Test LM Studio
+                </button>
+              </div>
+
+              <!-- Quick starter prompts -->
+              <div class="welcome-suggestions">
+                <span class="suggestions-label">Try asking:</span>
+                <button class="suggestion-chip" data-prompt="Analyze this project structure and summarize the architecture.">
+                  "Analyze this project structure"
+                </button>
+                <button class="suggestion-chip" data-prompt="Review recent changes and check for security vulnerabilities.">
+                  "Audit security vulnerabilities"
+                </button>
+                <button class="suggestion-chip" data-prompt="Run existing unit tests and report any failures.">
+                  "Check and run unit tests"
+                </button>
               </div>
             </div>
           </div>
-          <div class="welcome-actions">
-            <button id="btn-open-workspace-welcome" class="primary-btn">
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" stroke="currentColor" stroke-width="1.5"/></svg>
-              Open Workspace
-            </button>
-            <button id="btn-test-connection-welcome" class="secondary-btn">
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-              Test LM Studio
-            </button>
+
+          <!-- Messages Container -->
+          <div id="messages-container" class="messages-stream" role="log" aria-live="polite" aria-label="Conversation Feed">
+            <!-- Messages, code blocks, diff summaries dynamically inserted here -->
+          </div>
+        </div>
+
+        <!-- PANE B: Diff Review (Dedicated full diff editor) -->
+        <div id="pane-diff" class="workspace-pane hidden" role="tabpanel" aria-labelledby="tab-btn-diff">
+          <div class="diff-view-container">
+            <div class="diff-header-bar">
+              <div class="diff-header-info">
+                <span class="diff-title">PROPOSED CHANGES REVIEW</span>
+                <span id="diff-summary-stats" class="diff-stats-pill">0 files changed</span>
+              </div>
+              <div class="diff-header-actions">
+                <button id="btn-reject-all" class="btn btn--danger btn--xs" aria-label="Reject proposed changes" title="Reject all changes">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M4 4l8 8M12 4l-8 8" />
+                  </svg>
+                  <span>Reject</span>
+                </button>
+                <button id="btn-approve-all" class="btn btn--success btn--xs" aria-label="Approve and apply proposed changes" title="Apply all changes">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="3 8 7 12 13 4" />
+                  </svg>
+                  <span>Apply All</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Diff file cards container -->
+            <div id="diff-files-container" class="diff-files-container">
+              <div class="diff-empty-state">
+                <div class="diff-empty-icon-wrap" aria-hidden="true">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3">
+                    <path d="M4 2v12M12 2v12M2 6h4M10 10h4" />
+                  </svg>
+                </div>
+                <h3>No Proposed Changes</h3>
+                <p>Ask CODY in Conversation to plan modifications, refactor code, or create files.</p>
+                <button id="btn-diff-empty-switch" class="btn btn--secondary btn--xs">Return to Conversation</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANE C: Active File Preview -->
+        <div id="pane-preview" class="workspace-pane hidden" role="tabpanel" aria-labelledby="tab-btn-preview">
+          <div class="file-preview-container">
+            <div class="preview-header">
+              <div class="preview-path-badge">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+                  <path d="M3 2h7l4 4v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" />
+                </svg>
+                <span id="preview-filepath">filename.js</span>
+              </div>
+              <div class="preview-actions">
+                <span id="preview-meta" class="meta-tag">0 bytes · 0 lines</span>
+                <button id="btn-preview-ask-cody" class="btn btn--secondary btn--xs">
+                  Ask CODY about this file
+                </button>
+              </div>
+            </div>
+            <pre class="preview-code-block"><code id="preview-code-content">Select a file in the Project tree to preview its content.</code></pre>
           </div>
         </div>
       </div>
 
-      <!-- Conversation area (shown after workspace open) -->
-      <div id="conversation-area" class="conversation-area hidden" role="log" aria-live="polite" aria-label="Conversation">
-        <div id="messages-container" class="messages-container">
-          <!-- Messages injected here -->
-        </div>
-
-        <!-- Approval panel -->
-        <div id="approval-panel" class="approval-panel hidden" role="dialog" aria-label="Proposed changes" aria-modal="false">
-          <div class="approval-header">
-            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="#E5C07B" stroke-width="1.5"/><path d="M10 6v4l3 3" stroke="#E5C07B" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <strong>Proposed File Changes</strong>
-          </div>
-          <div id="approval-list" class="approval-list"></div>
-          <div class="approval-actions">
-            <button id="btn-approve" class="approve-btn">
-              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Apply Changes
-            </button>
-            <button id="btn-reject" class="reject-btn">
-              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-              Reject
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Prompt composer -->
-      <div id="composer" class="composer hidden" role="form" aria-label="Message composer">
-        <div class="composer-inner">
-          <textarea
-            id="prompt-input"
-            class="prompt-input"
-            placeholder="Ask CODY to understand, plan, or modify your project… (Enter to send, Shift+Enter for newline)"
-            rows="3"
-            aria-label="Enter your message"
-            aria-multiline="true"
-          ></textarea>
-          <div class="composer-actions">
+      <!-- Docked Prompt Composer -->
+      <div id="composer" class="composer-dock" role="form" aria-label="Prompt Composer">
+        <div class="composer-card">
+          <div class="composer-top-meta">
+            <div class="composer-context-pill">
+              <span class="context-indicator"></span>
+              <span id="composer-context-label">Workspace context active</span>
+            </div>
             <div class="composer-hints">
               <kbd>Enter</kbd> send &nbsp;·&nbsp; <kbd>Shift+Enter</kbd> newline
             </div>
-            <div class="composer-btns">
-              <button id="btn-stop" class="stop-btn hidden" aria-label="Stop generation">
-                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/></svg>
-                Stop
+          </div>
+
+          <div class="composer-input-row">
+            <textarea
+              id="prompt-input"
+              class="composer-textarea"
+              placeholder="Ask CODY to understand codebase, plan changes, edit files, or execute tests… (Enter to send)"
+              rows="1"
+              aria-label="Prompt message"
+            ></textarea>
+
+            <div class="composer-buttons">
+              <button id="btn-stop" class="btn btn--danger btn--sm hidden" title="Cancel generation" aria-label="Stop task">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <rect x="4" y="4" width="8" height="8" rx="1.5" />
+                </svg>
+                <span>Stop</span>
               </button>
-              <button id="btn-send" class="send-btn" aria-label="Send message (Enter)">
-                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Send
+
+              <button id="btn-send" class="btn btn--primary btn--sm" title="Send message (Enter)" aria-label="Send message">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="3" y1="8" x2="13" y2="8" />
+                  <polyline points="9 4 13 8 9 12" />
+                </svg>
+                <span>Send</span>
               </button>
             </div>
           </div>
         </div>
       </div>
     </main>
-  </div>
 
-  <!-- ══════════════════════════════════════════════════ EXECUTION PANEL ══ -->
-  <div id="exec-panel" class="exec-panel" role="region" aria-label="Execution log">
-    <div class="exec-panel-header" id="exec-panel-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="exec-panel-body">
-      <div class="exec-panel-title">
-        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M4 7h4M4 10h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        Execution Log
-      </div>
-      <div class="exec-panel-controls">
-        <span id="exec-status-inline" class="exec-status-inline"></span>
-        <button id="btn-clear-log" class="icon-btn icon-btn--sm" title="Clear log" aria-label="Clear log">
-          <svg viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2h4v2M5 4v8a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        </button>
-        <svg class="exec-chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-    </div>
-    <div id="exec-panel-body" class="exec-panel-body" hidden>
-      <div id="exec-log" class="exec-log" role="log" aria-label="Execution log entries"></div>
-    </div>
-  </div>
+    <!-- Resizer between main workspace and right inspector -->
+    <div id="resizer-inspector" class="resizer resizer--vertical" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize Inspector Panel"></div>
 
-  <!-- ═══════════════════════════════════════════════════ SETTINGS MODAL ══ -->
-  <div id="settings-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
-    <div class="modal-panel" role="document">
-      <div class="modal-header">
-        <h2 id="settings-title" class="modal-title">Settings</h2>
-        <button id="btn-close-settings" class="icon-btn" aria-label="Close settings">
-          <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </button>
+    <!-- 4. RIGHT AGENT INSPECTOR PANEL -->
+    <aside id="inspector-panel" class="inspector-panel" aria-label="Agent Inspector">
+      <div class="inspector-header">
+        <span class="inspector-title">AGENT INSPECTOR</span>
+        <span id="inspector-phase-badge" class="badge badge--neutral">Idle</span>
       </div>
-      <div class="modal-body">
-        <div class="settings-group">
-          <h3 class="settings-group-title">LM Studio</h3>
-          <div class="settings-field">
-            <label for="setting-endpoint">API Endpoint</label>
-            <input id="setting-endpoint" type="url" class="settings-input" placeholder="http://127.0.0.1:1234/v1" />
-          </div>
-          <div class="settings-field">
-            <label for="setting-model">Active Model</label>
-            <div class="model-select-row">
-              <select id="setting-model" class="settings-select"></select>
-              <button id="btn-refresh-models" class="secondary-btn secondary-btn--sm" aria-label="Refresh models">Refresh</button>
+
+      <div class="inspector-body">
+        <!-- Stage Pipeline -->
+        <div class="inspector-section">
+          <div class="section-title">WORKFLOW STAGES</div>
+          <div class="pipeline-track">
+            <div class="pipeline-step" data-step="planning">
+              <div class="step-indicator"></div>
+              <div class="step-label">
+                <strong>Planning</strong>
+                <span class="step-desc">Analyzing context & workspace</span>
+              </div>
+            </div>
+            <div class="pipeline-step" data-step="generating">
+              <div class="step-indicator"></div>
+              <div class="step-label">
+                <strong>Generating</strong>
+                <span class="step-desc">Streaming model response</span>
+              </div>
+            </div>
+            <div class="pipeline-step" data-step="awaiting_approval">
+              <div class="step-indicator"></div>
+              <div class="step-label">
+                <strong>Review</strong>
+                <span class="step-desc">Awaiting your approval</span>
+              </div>
+            </div>
+            <div class="pipeline-step" data-step="applying">
+              <div class="step-indicator"></div>
+              <div class="step-label">
+                <strong>Applying</strong>
+                <span class="step-desc">Executing file operations</span>
+              </div>
+            </div>
+            <div class="pipeline-step" data-step="completed">
+              <div class="step-indicator"></div>
+              <div class="step-label">
+                <strong>Verified</strong>
+                <span class="step-desc">Task completed safely</span>
+              </div>
             </div>
           </div>
-          <button id="btn-test-conn" class="secondary-btn">Test Connection</button>
-          <div id="conn-test-result" class="conn-test-result" aria-live="polite"></div>
         </div>
 
-        <div class="settings-group">
-          <h3 class="settings-group-title">Generation</h3>
-          <div class="settings-field">
-            <label for="setting-temp">Temperature <span id="temp-value" class="settings-value-badge">0.1</span></label>
-            <input id="setting-temp" type="range" min="0" max="2" step="0.05" class="settings-range" />
+        <!-- Context Budget Gauge -->
+        <div class="inspector-section">
+          <div class="section-title-row">
+            <span class="section-title">CONTEXT BUDGET</span>
+            <span id="context-tokens-pct" class="meta-tag">0%</span>
           </div>
-          <div class="settings-field">
-            <label for="setting-max-ctx">Max Context Tokens</label>
-            <input id="setting-max-ctx" type="number" class="settings-input settings-input--sm" min="1024" max="131072" step="1024" />
+          <div class="progress-bar-track">
+            <div id="context-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
           </div>
-          <div class="settings-field">
-            <label for="setting-max-out">Max Output Tokens</label>
-            <input id="setting-max-out" type="number" class="settings-input settings-input--sm" min="256" max="32768" step="256" />
+          <div class="context-detail-row">
+            <span id="context-tokens-detail">0 / 16,384 tokens</span>
+            <span id="context-status-text" class="status-safe">Safe</span>
+          </div>
+          <div class="context-actions-row">
+            <button id="btn-summarize-now" class="btn btn--secondary btn--xs" title="Summarize conversation into manifest">Summarize Now</button>
+            <button id="btn-clear-history" class="btn btn--secondary btn--xs" title="Clear all conversation context">Clear Context</button>
           </div>
         </div>
 
-        <div class="settings-group">
-          <h3 class="settings-group-title">Workspace</h3>
-          <div class="settings-field settings-field--row">
-            <label for="setting-auto-approve">Auto-approve file operations</label>
-            <input id="setting-auto-approve" type="checkbox" class="settings-checkbox" />
+        <!-- Project Memory Card -->
+        <div class="inspector-section">
+          <div class="section-title">PROJECT ARCHITECTURE</div>
+          <div class="manifest-quick-card">
+            <div class="manifest-card-row">
+              <span class="row-label">Project:</span>
+              <strong id="manifest-card-name">—</strong>
+            </div>
+            <div class="manifest-card-row">
+              <span class="row-label">Stack:</span>
+              <span id="manifest-card-stack" class="tag-list">None detected</span>
+            </div>
+            <div class="manifest-card-block">
+              <span class="row-label">Architecture:</span>
+              <p id="manifest-card-arch">No summary loaded yet.</p>
+            </div>
           </div>
         </div>
       </div>
+    </aside>
+  </div>
+
+  <!-- ═════════════════════════════════════════════════════ BOTTOM TOOL WINDOW ══ -->
+  <div id="bottom-tool-window" class="bottom-tool-window collapsed" role="region" aria-label="Tool Window">
+    <div id="resizer-bottom" class="resizer resizer--horizontal" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Resize Bottom Tool Window"></div>
+
+    <div class="bottom-tabbar">
+      <div class="bottom-tab-group" role="tablist">
+        <button id="tab-btn-exec-log" class="bottom-tab active" role="tab" aria-selected="true" data-pane="pane-bottom-log">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <polyline points="2 5 6 9 2 13" />
+            <path d="M8 13h6" />
+          </svg>
+          <span>Execution Log</span>
+        </button>
+
+        <button id="tab-btn-tests" class="bottom-tab" role="tab" aria-selected="false" data-pane="pane-bottom-tests">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <path d="M6 2v4a2 2 0 01-2 2H3l-1 5h12l-1-5h-1a2 2 0 01-2-2V2H6z" />
+          </svg>
+          <span>Tests Runner</span>
+        </button>
+
+        <button id="tab-btn-manifest-view" class="bottom-tab" role="tab" aria-selected="false" data-pane="pane-bottom-manifest">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <rect x="3" y="2" width="10" height="12" rx="1.5" />
+            <path d="M6 5h4M6 8h4M6 11h2" />
+          </svg>
+          <span>Project Manifest</span>
+        </button>
+      </div>
+
+      <div class="bottom-tab-controls">
+        <span id="bottom-status-message" class="bottom-status-text"></span>
+        <button id="btn-copy-bottom-output" class="icon-btn icon-btn--xs" title="Copy Log" aria-label="Copy Output">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <rect x="5" y="5" width="8" height="8" rx="1" />
+            <path d="M3 11V3h8" />
+          </svg>
+        </button>
+        <button id="btn-clear-bottom-log" class="icon-btn icon-btn--xs" title="Clear Log" aria-label="Clear Output">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <circle cx="8" cy="8" r="6" />
+            <line x1="5" y1="5" x2="11" y2="11" />
+          </svg>
+        </button>
+        <button id="btn-toggle-bottom-collapse" class="icon-btn icon-btn--xs" title="Collapse / Expand Tool Window (Ctrl+J)" aria-label="Collapse / Expand">
+          <svg class="chevron-toggle" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <polyline points="4 6 8 10 12 6" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Content Panes -->
+    <div class="bottom-content-area">
+      <!-- 1. Exec Log -->
+      <div id="pane-bottom-log" class="bottom-pane active">
+        <div id="exec-log" class="log-stream" role="log" aria-label="Execution Log entries">
+          <div class="log-line log-line--info"><span class="log-time">[Init]</span> CODY Developer Workspace ready.</div>
+        </div>
+      </div>
+
+      <!-- 2. Tests Runner -->
+      <div id="pane-bottom-tests" class="bottom-pane hidden">
+        <div class="tests-runner-container">
+          <div class="tests-toolbar">
+            <button id="btn-run-tests" class="btn btn--primary btn--sm">
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                <polygon points="4 2 13 8 4 14 4 2" />
+              </svg>
+              Run Workspace Tests
+            </button>
+            <span id="test-run-status" class="meta-tag">Ready</span>
+          </div>
+          <pre id="test-run-output" class="tests-output-terminal">Click "Run Workspace Tests" to execute the test suite (npm test) in the project root.</pre>
+        </div>
+      </div>
+
+      <!-- 3. Manifest Viewer -->
+      <div id="pane-bottom-manifest" class="bottom-pane hidden">
+        <div class="manifest-viewer-container">
+          <pre id="manifest-json-raw" class="manifest-raw-block">No manifest loaded</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ STATUS BAR ══ -->
+  <footer class="status-bar" role="contentinfo">
+    <div class="status-bar-left">
+      <div class="status-bar-item">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+          <path d="M2 4a1 1 0 011-1h3.5l1.5 1.5H13a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" />
+        </svg>
+        <span id="status-workspace-name">No Workspace</span>
+      </div>
+      <div class="status-bar-item">
+        <span class="status-bar-dot"></span>
+        <span id="status-agent-phase">Ready</span>
+      </div>
+    </div>
+
+    <div class="status-bar-right">
+      <div class="status-bar-item" title="Model name">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+          <rect x="2" y="3" width="12" height="10" rx="2" />
+        </svg>
+        <span id="status-model-name">Qwen2.5-Coder</span>
+      </div>
+      <div class="status-bar-item" title="LM Studio connection">
+        <span class="status-dot"></span>
+        <span id="status-connection-endpoint">127.0.0.1:1234</span>
+      </div>
+      <div class="status-bar-item" title="Context Token Budget">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+          <circle cx="8" cy="8" r="6" />
+          <path d="M8 2v6l3 3" />
+        </svg>
+        <span id="status-context-tokens">Context: 0 / 16k</span>
+      </div>
+      <button id="btn-status-toggle-bottom" class="status-bar-item status-bar-btn" title="Toggle Tool Window">
+        <span>Tool Window</span>
+        <kbd>Ctrl+J</kbd>
+      </button>
+    </div>
+  </footer>
+
+  <!-- ═════════════════════════════════════════════════════ COMMAND PALETTE ══ -->
+  <div id="command-palette" class="palette-overlay hidden" role="dialog" aria-modal="true" aria-label="Command Palette">
+    <div class="palette-dialog" role="document">
+      <div class="palette-input-box">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <circle cx="6.5" cy="6.5" r="4.5" />
+          <path d="M10 10l3.5 3.5" />
+        </svg>
+        <input id="palette-search-input" type="text" class="palette-input" placeholder="Type a command or search action…" autocomplete="off" />
+        <kbd class="shortcut-pill">ESC</kbd>
+      </div>
+      <div id="palette-results" class="palette-results" role="listbox">
+        <!-- Palette items generated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ SETTINGS MODAL ══ -->
+  <div id="settings-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal-dialog" role="document">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <circle cx="8" cy="8" r="3" />
+            <path d="M8 1v2M8 13v2M1 8h2M13 8h2" />
+          </svg>
+          <h2 id="settings-title">CODY Settings</h2>
+        </div>
+        <button id="btn-close-settings" class="modal-close-btn" aria-label="Close Settings">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Settings Group 1: Model Connection -->
+        <fieldset class="settings-group">
+          <legend class="group-legend">Local Model Engine (LM Studio)</legend>
+          <div class="field-row">
+            <label for="setting-endpoint" class="field-label">API Endpoint</label>
+            <input id="setting-endpoint" type="url" class="field-input" placeholder="http://127.0.0.1:1234/v1" />
+          </div>
+          <div class="field-row">
+            <label for="setting-model" class="field-label">Active Model</label>
+            <div class="model-picker-row">
+              <select id="setting-model" class="field-select"></select>
+              <button id="btn-refresh-models" class="btn btn--secondary btn--sm">Refresh Models</button>
+            </div>
+          </div>
+          <div class="field-row field-row--action">
+            <button id="btn-test-conn" class="btn btn--secondary btn--sm">Test Connection</button>
+            <span id="conn-test-result" class="conn-test-result" aria-live="polite"></span>
+          </div>
+        </fieldset>
+
+        <!-- Settings Group 2: Generation Tuning -->
+        <fieldset class="settings-group">
+          <legend class="group-legend">Model Generation Parameters</legend>
+          <div class="field-row">
+            <div class="label-with-value">
+              <label for="setting-temp" class="field-label">Temperature</label>
+              <span id="temp-value" class="value-tag">0.10</span>
+            </div>
+            <input id="setting-temp" type="range" min="0" max="2" step="0.05" class="field-slider" />
+          </div>
+          <div class="field-grid-2">
+            <div class="field-col">
+              <label for="setting-max-ctx" class="field-label">Max Context Tokens</label>
+              <input id="setting-max-ctx" type="number" class="field-input" min="1024" max="131072" step="1024" />
+            </div>
+            <div class="field-col">
+              <label for="setting-max-out" class="field-label">Max Output Tokens</label>
+              <input id="setting-max-out" type="number" class="field-input" min="256" max="32768" step="256" />
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Settings Group 3: Workspace & Safety -->
+        <fieldset class="settings-group">
+          <legend class="group-legend">Workspace & Security</legend>
+          <div class="field-checkbox-row">
+            <input id="setting-auto-approve" type="checkbox" class="field-checkbox" />
+            <label for="setting-auto-approve" class="checkbox-label">
+              <strong>Auto-approve file changes</strong>
+              <span>Applies proposed modifications immediately without manual confirmation</span>
+            </label>
+          </div>
+        </fieldset>
+      </div>
+
       <div class="modal-footer">
-        <button id="btn-save-settings" class="primary-btn">Save Settings</button>
-        <button id="btn-cancel-settings" class="secondary-btn">Cancel</button>
+        <button id="btn-cancel-settings" class="btn btn--secondary">Cancel</button>
+        <button id="btn-save-settings" class="btn btn--primary">Save Changes</button>
       </div>
     </div>
   </div>

@@ -81,6 +81,28 @@ function registerWorkspaceHandlers() {
       return { success: false, error: err.message };
     }
   });
+
+  // ─── Run Workspace Command / Tests ─────────────────────────────────────────
+  ipcMain.handle(IPC_EVENTS.INVOKE_RUN_COMMAND, async (_event, { command }) => {
+    try {
+      if (!workspaceManager.root) return { success: false, error: 'No workspace open' };
+      const { exec } = require('child_process');
+      const cmdToRun = command || 'npm test';
+      return new Promise((resolve) => {
+        exec(cmdToRun, { cwd: workspaceManager.root, timeout: 60000 }, (error, stdout, stderr) => {
+          resolve({
+            success: !error,
+            exitCode: error ? (error.code ?? 1) : 0,
+            stdout: stdout || '',
+            stderr: stderr || '',
+            command: cmdToRun,
+          });
+        });
+      });
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
 }
 
 module.exports = { registerWorkspaceHandlers };

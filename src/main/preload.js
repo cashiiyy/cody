@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('cody', {
   getFileTree: () => ipcRenderer.invoke(IPC_EVENTS.INVOKE_GET_FILE_TREE),
   readFile: (path) => ipcRenderer.invoke(IPC_EVENTS.INVOKE_READ_FILE, { path }),
   getManifest: () => ipcRenderer.invoke(IPC_EVENTS.INVOKE_GET_MANIFEST),
+  runCommand: (command) => ipcRenderer.invoke(IPC_EVENTS.INVOKE_RUN_COMMAND, { command }),
 
   // ─── Agent ────────────────────────────────────────────────────────────
   startTask: (message) => ipcRenderer.invoke(IPC_EVENTS.INVOKE_START_TASK, { message }),
