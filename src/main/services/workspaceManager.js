@@ -7,7 +7,6 @@ const {
   MAX_INDEXABLE_FILE_SIZE,
   MAX_READABLE_FILE_SIZE,
   BINARY_EXTENSIONS,
-  DEFAULT_SETTINGS,
 } = require('../../shared/constants');
 const { resolveAndValidate } = require('../utils/pathSecurity');
 const logger = require('../utils/logger');

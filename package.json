@@ -11,7 +11,7 @@
     "test": "jest",
     "test:unit": "jest tests/unit",
     "test:integration": "jest tests/integration",
-    "lint": "eslint src --ext .js",
+    "lint": "eslint src",
     "package": "electron-forge package",
     "make": "electron-forge make"
   },

@@ -67,6 +67,17 @@ describe('pathSecurity.validateRelativePath', () => {
   test('rejects empty', () => {
     expect(() => validateRelativePath('')).toThrow();
   });
+  test('rejects drive-relative path', () => {
+    expect(() => validateRelativePath('C:evil.txt')).toThrow('Colon in relative path rejected');
+  });
+
+  test('rejects NTFS alternate data streams', () => {
+    expect(() => validateRelativePath('file.txt:stream')).toThrow('Colon in relative path rejected');
+  });
+
+  test('rejects null byte in path', () => {
+    expect(() => validateRelativePath('file\0.txt')).toThrow('null byte');
+  });
 });
 
 describe('pathSecurity.validateFilename', () => {
@@ -80,6 +91,19 @@ describe('pathSecurity.validateFilename', () => {
 
   test('rejects Windows reserved name NUL.txt', () => {
     expect(() => validateFilename('NUL.txt')).toThrow('Reserved filename');
+  });
+
+  test('rejects invalid Windows characters', () => {
+    expect(() => validateFilename('bad:name.js')).toThrow('Invalid characters');
+    expect(() => validateFilename('bad<name>.js')).toThrow('Invalid characters');
+    expect(() => validateFilename('bad*name.js')).toThrow('Invalid characters');
+    expect(() => validateFilename('bad?name.js')).toThrow('Invalid characters');
+    expect(() => validateFilename('bad|name.js')).toThrow('Invalid characters');
+  });
+
+  test('rejects trailing dot or space', () => {
+    expect(() => validateFilename('name.')).toThrow('cannot end with dot or space');
+    expect(() => validateFilename('name ')).toThrow('cannot end with dot or space');
   });
 
   test('rejects null byte', () => {

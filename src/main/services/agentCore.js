@@ -6,7 +6,6 @@ const crypto = require('crypto');
 const { EventEmitter } = require('events');
 const {
   IPC_EVENTS,
-  CheckpointSchema,
   CODY_DIR,
   CHECKPOINTS_DIR,
 } = require('../../shared/constants');
@@ -62,7 +61,7 @@ class AgentCore extends EventEmitter {
     return msgs[phase] || phase;
   }
 
-  async startTask(userMessage, windowSend) {
+  startTask(userMessage) {
     if (this.isActive) {
       throw new Error('A task is already in progress. Cancel it first.');
     }
@@ -76,20 +75,30 @@ class AgentCore extends EventEmitter {
       appliedResults: [],
     };
 
-    // Store windowSend for IPC forwarding
-    this._windowSend = windowSend;
-
     this._emit(IPC_EVENTS.AGENT_START, { requestId: taskId, message: userMessage });
     this._setPhase('planning');
 
+    // Launch async execution without blocking caller
+    this._runTask(taskId, userMessage);
+
+    return taskId;
+  }
+
+  async _runTask(taskId, userMessage) {
     try {
       // Check summarization need
       if (contextManager.isNearLimit()) {
         this._emit(IPC_EVENTS.AGENT_STATUS, { requestId: taskId, phase: 'planning', message: 'Summarizing context…' });
         const ok = await contextManager.summarize();
         if (!ok) {
-          logger.warn('Summarization failed; continuing with trimmed context');
+          logger.warn('Summarization failed; trimming messages to budget');
+          contextManager.trimToBudget();
         }
+      }
+
+      // Check if cancelled during planning
+      if (!this._activeTask || this._activeTask.taskId !== taskId || this._activeTask.phase === 'cancelled') {
+        return;
       }
 
       // Add user message to context
@@ -99,23 +108,31 @@ class AgentCore extends EventEmitter {
       this._setPhase('generating');
 
       let fullResponse = '';
-      let cancelFn = null;
 
       const streamPromise = new Promise((resolve, reject) => {
         llmClient.streamChat({
           requestId: taskId,
           messages,
           onToken: (token) => {
+            if (!this._activeTask || this._activeTask.taskId !== taskId || this._activeTask.phase === 'cancelled') {
+              return;
+            }
             fullResponse += token;
             this._emit(IPC_EVENTS.AGENT_TOKEN, { requestId: taskId, token });
           },
           onComplete: (text) => resolve(text),
           onError: (err) => reject(err),
-        }).then(fn => { cancelFn = fn; this._cancelFn = fn; });
+        }).then(fn => { this._cancelFn = fn; });
       });
 
       await streamPromise;
       this._cancelFn = null;
+
+      // Guard: if cancelled during streaming, halt immediately
+      if (!this._activeTask || this._activeTask.taskId !== taskId || this._activeTask.phase === 'cancelled') {
+        logger.info('Task was cancelled during streaming, halting', { taskId });
+        return;
+      }
 
       // Store assistant response
       contextManager.addAssistantMessage(fullResponse);
@@ -161,6 +178,9 @@ class AgentCore extends EventEmitter {
         this._activeTask = null;
       }
     } catch (err) {
+      if (!this._activeTask || this._activeTask.taskId !== taskId || this._activeTask.phase === 'cancelled') {
+        return;
+      }
       logger.error('Agent task error', { taskId, error: err.message });
       this._emit(IPC_EVENTS.AGENT_ERROR, {
         requestId: taskId,
@@ -254,16 +274,31 @@ class AgentCore extends EventEmitter {
    * Looks for ```json ... ``` blocks containing {"actions": [...]}
    */
   _parseActions(text) {
-    const jsonBlockRegex = /```json\s*([\s\S]*?)\s*```/gi;
+    if (!text || typeof text !== 'string') return [];
+
+    // 1. Check markdown blocks: ```json ... ``` or ``` ... ```
+    const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/gi;
     let match;
-    while ((match = jsonBlockRegex.exec(text)) !== null) {
+    while ((match = codeBlockRegex.exec(text)) !== null) {
       try {
-        const parsed = JSON.parse(match[1]);
+        const parsed = JSON.parse(match[1].trim());
         if (parsed && Array.isArray(parsed.actions) && parsed.actions.length > 0) {
           return parsed.actions;
         }
-      } catch { /* not valid JSON, continue */ }
+      } catch { /* continue */ }
     }
+
+    // 2. Fallback: Search for raw JSON object containing "actions"
+    const rawMatch = text.match(/\{[\s\S]*?"actions"\s*:\s*\[[\s\S]*?\][\s\S]*?\}/);
+    if (rawMatch) {
+      try {
+        const parsed = JSON.parse(rawMatch[0]);
+        if (parsed && Array.isArray(parsed.actions) && parsed.actions.length > 0) {
+          return parsed.actions;
+        }
+      } catch { /* continue */ }
+    }
+
     return [];
   }
 

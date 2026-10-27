@@ -117,9 +117,10 @@ class LLMClient {
       }
     } catch (err) {
       cleanup();
-      if (err.name === 'AbortError' || err.message?.includes('abort')) {
+      const isAbort = err.name === 'AbortError' || err.name === 'APIUserAbortError' || err.message?.toLowerCase().includes('abort');
+      if (isAbort) {
         cancelled = true;
-        onComplete(fullText); // return what we have
+        logger.info('Stream aborted', { requestId });
         return () => {};
       }
       logger.error('Stream error', { requestId, error: err.message });

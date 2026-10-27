@@ -2,6 +2,7 @@
 
 const { app, BrowserWindow, session } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const logger = require('./utils/logger');
 const settingsManager = require('./services/settingsManager');
 const workspaceManager = require('./services/workspaceManager');
@@ -21,6 +22,7 @@ process.on('unhandledRejection', (reason) => {
 let mainWindow = null;
 
 async function createWindow() {
+  const iconPath = path.join(__dirname, '../../assets/icon.png');
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -29,6 +31,7 @@ async function createWindow() {
     frame: true, // native Windows frame
     backgroundColor: '#1E1E1E',
     show: false,
+    ...(fs.existsSync(iconPath) ? { icon: iconPath } : {}),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -52,11 +55,6 @@ async function createWindow() {
   });
 
   await mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
-
-  // Register IPC handlers after window created
-  registerWorkspaceHandlers();
-  registerSettingsHandlers();
-  registerAgentHandlers(mainWindow);
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
@@ -94,6 +92,11 @@ app.whenReady().then(async () => {
       logger.warn('Could not restore last workspace', { error: err.message });
     }
   }
+
+  // Register IPC handlers once
+  registerWorkspaceHandlers();
+  registerSettingsHandlers();
+  registerAgentHandlers(() => mainWindow);
 
   await createWindow();
 

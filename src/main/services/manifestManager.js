@@ -2,7 +2,6 @@
 
 const path = require('path');
 const fse = require('fs-extra');
-const crypto = require('crypto');
 const {
   ManifestSchema,
   DEFAULT_MANIFEST,
@@ -32,11 +31,11 @@ class ManifestManager {
     this._manifest = null;
   }
 
-  async init(projectName) {
+  async init(projectName, forceNew = false) {
     await fse.ensureDir(path.join(this._workspaceRoot, CODY_DIR));
     const manifestPath = this._manifestPath();
 
-    if (await fse.pathExists(manifestPath)) {
+    if (!forceNew && (await fse.pathExists(manifestPath))) {
       return this.load();
     }
 
@@ -97,7 +96,7 @@ class ManifestManager {
       return this._manifest;
     }
     // Last resort: fresh manifest
-    return this.init();
+    return this.init(null, true);
   }
 
   async _recoverFromBackup() {
@@ -111,7 +110,7 @@ class ManifestManager {
         logger.error('Backup manifest also corrupt');
       }
     }
-    return this.init();
+    return this.init(null, true);
   }
 
   get() {

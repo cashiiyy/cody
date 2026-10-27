@@ -256,17 +256,14 @@ function closeSettingsModal() {
 
 // ─── Workspace ────────────────────────────────────────────────────────────────
 
-async function openWorkspace() {
-  const res = await window.cody.selectWorkspace();
-  if (res.cancelled || !res.success) {
-    if (res.error) log('error', res.error);
-    return;
-  }
-  state.workspace = res.root;
-  const name = res.root.split(/[\\/]/).pop();
+async function setupWorkspaceUI(root, fileCount) {
+  state.workspace = root;
+  const name = root.split(/[\\/]/).pop();
   els.workspaceName.textContent = name;
-  els.workspaceName.title = res.root;
-  log('info', `Workspace: ${res.root} (${res.fileCount} files indexed)`);
+  els.workspaceName.title = root;
+  if (fileCount !== undefined) {
+    log('info', `Workspace: ${root} (${fileCount} files indexed)`);
+  }
 
   // Switch to conversation view
   els.welcomeScreen.classList.add('hidden');
@@ -275,8 +272,16 @@ async function openWorkspace() {
 
   await refreshFileTree();
   updateContextBar();
+}
 
-  // Add a welcome assistant message
+async function openWorkspace() {
+  const res = await window.cody.selectWorkspace();
+  if (res.cancelled || !res.success) {
+    if (res.error) log('error', res.error);
+    return;
+  }
+  await setupWorkspaceUI(res.root, res.fileCount);
+  const name = res.root.split(/[\\/]/).pop();
   addMessage('assistant', `Workspace loaded: **${name}**\n\n${res.fileCount} files indexed. I'm ready to help you understand, plan, and modify this project. What would you like to do?`);
 }
 
@@ -556,7 +561,7 @@ function setupAgentListeners() {
     updateContextBar();
   }));
 
-  addCleanup(window.cody.onAgentCancelled(data => {
+  addCleanup(window.cody.onAgentCancelled(_data => {
     if (streamingBody) {
       streamingBody.classList.remove('streaming-cursor');
       streamBuffer = '';
@@ -771,6 +776,18 @@ async function init() {
   setupAgentListeners();
   await loadSettings();
   await checkConnection();
+
+  // Restore active workspace if set
+  try {
+    const manifestRes = await window.cody.getManifest();
+    if (manifestRes.success && manifestRes.root) {
+      await setupWorkspaceUI(manifestRes.root);
+      const name = manifestRes.root.split(/[\\/]/).pop();
+      addMessage('assistant', `Restored workspace: **${name}**. Ready to continue.`);
+    }
+  } catch (err) {
+    console.warn('Could not check restored workspace', err);
+  }
 
   // Auto-refresh context bar every 30s
   setInterval(updateContextBar, 30000);

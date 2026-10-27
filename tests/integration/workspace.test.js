@@ -6,7 +6,7 @@ const fse  = require('fs-extra');
 
 jest.mock('electron', () => ({
   app: {
-    getPath: () => path.join(require('os').tmpdir(), 'cody-settings-test'),
+    getPath: () => require('path').join(require('os').tmpdir(), 'cody-settings-test'),
     getVersion: () => '0.1.0',
   },
 }), { virtual: true });

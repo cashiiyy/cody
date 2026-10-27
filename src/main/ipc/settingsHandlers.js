@@ -1,7 +1,7 @@
 'use strict';
 
 const { ipcMain } = require('electron');
-const { IPC_EVENTS } = require('../../../shared/constants');
+const { IPC_EVENTS } = require('../../shared/constants');
 const settingsManager = require('../services/settingsManager');
 const llmClient = require('../services/llmClient');
 const logger = require('../utils/logger');

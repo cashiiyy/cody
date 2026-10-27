@@ -5,16 +5,11 @@ const fse = require('fs-extra');
 const crypto = require('crypto');
 const {
   FileOperationBatchSchema,
-  FileActionSchema,
-  CODY_DIR,
-  CHECKPOINTS_DIR,
   MAX_FILE_SIZE_WRITE,
-  CheckpointSchema,
 } = require('../../shared/constants');
 const { resolveAndValidate, validateFilename } = require('../utils/pathSecurity');
 const logger = require('../utils/logger');
 const workspaceManager = require('./workspaceManager');
-const manifestManager = require('./manifestManager');
 
 class FileOperationService {
   constructor() {
@@ -78,7 +73,6 @@ class FileOperationService {
     const oldLines = oldContent.split('\n');
     const newLines = newContent.split('\n');
     const diff = [];
-    const maxLines = Math.max(oldLines.length, newLines.length);
 
     // Simple non-LCS diff for display purposes
     let removed = 0, added = 0;
@@ -127,18 +121,21 @@ class FileOperationService {
       const tmpPath = abs + `.cody_tmp_${crypto.randomBytes(4).toString('hex')}`;
 
       await fse.ensureDir(dir);
-      await fse.writeFile(tmpPath, content, 'utf8');
+      try {
+        await fse.writeFile(tmpPath, content, 'utf8');
 
-      // Verify what we wrote
-      const written = await fse.readFile(tmpPath, 'utf8');
-      if (written !== content) {
+        // Verify what we wrote
+        const written = await fse.readFile(tmpPath, 'utf8');
+        if (written !== content) {
+          throw new Error(`Write verification failed for "${action.path}"`);
+        }
+
+        await fse.move(tmpPath, abs, { overwrite: true });
+        return { success: true, type: action.type, path: action.path, bytesWritten: Buffer.byteLength(content, 'utf8') };
+      } catch (err) {
         await fse.remove(tmpPath).catch(() => {});
-        throw new Error(`Write verification failed for "${action.path}"`);
+        throw err;
       }
-
-      await fse.move(tmpPath, abs, { overwrite: true });
-
-      return { success: true, type: action.type, path: action.path, bytesWritten: Buffer.byteLength(content, 'utf8') };
     }
 
     throw new Error(`Unknown action type: "${action.type}"`);

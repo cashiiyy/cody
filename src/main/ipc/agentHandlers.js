@@ -1,15 +1,12 @@
 'use strict';
 
-const { ipcMain, dialog, BrowserWindow } = require('electron');
-const path = require('path');
-const { IPC_EVENTS } = require('../../../shared/constants');
-const workspaceManager = require('../services/workspaceManager');
-const manifestManager = require('../services/manifestManager');
+const { ipcMain } = require('electron');
+const { IPC_EVENTS } = require('../../shared/constants');
 const agentCore = require('../services/agentCore');
-const contextManager = require('../services/contextManager');
 const logger = require('../utils/logger');
 
-function registerAgentHandlers(mainWindow) {
+function registerAgentHandlers(windowGetter) {
+  const getWindow = () => (typeof windowGetter === 'function' ? windowGetter() : windowGetter);
   // ─── Start Task ──────────────────────────────────────────────────────────
   ipcMain.handle(IPC_EVENTS.INVOKE_START_TASK, async (event, { message }) => {
     try {
@@ -17,19 +14,7 @@ function registerAgentHandlers(mainWindow) {
         return { success: false, error: 'Message cannot be empty' };
       }
 
-      const taskId = await new Promise((resolve, reject) => {
-        const handler = (taskData) => {
-          resolve(taskData.requestId);
-        };
-        agentCore.once(IPC_EVENTS.AGENT_START, handler);
-        agentCore.startTask(message.trim(), (channel, data) => {
-          mainWindow.webContents.send(channel, data);
-        }).catch(err => {
-          agentCore.off(IPC_EVENTS.AGENT_START, handler);
-          reject(err);
-        });
-      });
-
+      const taskId = agentCore.startTask(message.trim());
       return { success: true, taskId };
     } catch (err) {
       logger.error('Start task error', { error: err.message });
@@ -83,23 +68,14 @@ function registerAgentHandlers(mainWindow) {
     IPC_EVENTS.AGENT_CANCELLED,
   ];
 
-  const listeners = [];
   for (const event of agentEvents) {
-    const listener = (data) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(event, data);
+    agentCore.on(event, (data) => {
+      const win = getWindow();
+      if (win && !win.isDestroyed()) {
+        win.webContents.send(event, data);
       }
-    };
-    agentCore.on(event, listener);
-    listeners.push({ event, listener });
+    });
   }
-
-  // Cleanup on window close
-  mainWindow.on('closed', () => {
-    for (const { event, listener } of listeners) {
-      agentCore.off(event, listener);
-    }
-  });
 }
 
 module.exports = { registerAgentHandlers };

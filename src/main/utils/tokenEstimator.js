@@ -1,7 +1,6 @@
 'use strict';
 
-const path = require('path');
-const { BINARY_EXTENSIONS } = require('../../shared/constants');
+
 
 /**
  * Estimate token count conservatively.

@@ -1,7 +1,7 @@
 'use strict';
 
 const { ipcMain, dialog } = require('electron');
-const { IPC_EVENTS } = require('../../../shared/constants');
+const { IPC_EVENTS } = require('../../shared/constants');
 const workspaceManager = require('../services/workspaceManager');
 const manifestManager = require('../services/manifestManager');
 const contextManager = require('../services/contextManager');
@@ -9,7 +9,7 @@ const logger = require('../utils/logger');
 
 function registerWorkspaceHandlers() {
   // ─── Select Workspace ─────────────────────────────────────────────────────
-  ipcMain.handle(IPC_EVENTS.INVOKE_SELECT_WORKSPACE, async (event) => {
+  ipcMain.handle(IPC_EVENTS.INVOKE_SELECT_WORKSPACE, async (_event) => {
     const result = await dialog.showOpenDialog({
       title: 'Select Project Workspace',
       properties: ['openDirectory'],
@@ -76,7 +76,7 @@ function registerWorkspaceHandlers() {
     try {
       const manifest = manifestManager.get();
       const tokenUsage = contextManager.getTokenUsage();
-      return { success: true, manifest, tokenUsage };
+      return { success: true, manifest, tokenUsage, root: workspaceManager.root };
     } catch (err) {
       return { success: false, error: err.message };
     }

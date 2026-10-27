@@ -1,6 +1,6 @@
 'use strict';
 
-const { estimateChatTokens, estimateTokens } = require('../utils/tokenEstimator');
+const { estimateChatTokens } = require('../utils/tokenEstimator');
 const settingsManager = require('./settingsManager');
 const manifestManager = require('./manifestManager');
 const llmClient = require('./llmClient');
@@ -161,6 +161,15 @@ class ContextManager {
       this._summarizing = false;
       return false;
     }
+  }
+
+  trimToBudget(customLimit) {
+    const settings = settingsManager.get();
+    const limit = customLimit || settings.hardLimitTokens || 14000;
+    while (this._messages.length > 2 && this.estimateCurrentTokens() > limit) {
+      this._messages.shift();
+    }
+    logger.info('Trimmed context to budget', { messageCount: this._messages.length, tokens: this.estimateCurrentTokens() });
   }
 
   clearHistory() {
